@@ -4,55 +4,63 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
 
-const renderer = new THREE.WebGLRenderer();
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+//adjust antialiasing
+renderer.setPixelRatio(window.devicePixelRatio)
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
-// const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
-// scene.add(ambientLight);
+
+camera.position.x = 100;
+camera.position.z = 200;
+camera.position.y = 100;
 const controller = new OrbitControls(camera, renderer.domElement);
+controller.target = new THREE.Vector3(100, 100, 0);
+controller.update();
 
 
-const geometry = new THREE.BoxGeometry(1, 1, 1);
-const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
-const cube = new THREE.Mesh(geometry, material);
-// scene.add( cube );
-
-camera.position.z = 5;
-//create a line geometry
 const lineMat = new THREE.LineBasicMaterial({
-	color: 0x0000ff,
-	linewidth: 1,
+	color: 0x0000ff
 });
 const originalLineGroup = new THREE.Group();
 originalLineGroup.name = 'originalLineGroup';
-let lineArray: THREE.Line[] = [];
+// let lineArray: THREE.Line[] = [];
 const newLineGroup = new THREE.Group();
 newLineGroup.name = 'newLineGroup';
 scene.add(newLineGroup);
 
 const countX = 200;
 const countY = 200;
-for (let i = 0; i < countY; i++) {
-	const curve = new THREE.LineCurve(
-		new THREE.Vector2(0, i),
-		new THREE.Vector2(countX, i)
-	);
+const pointAmount = 5;
 
-	const points = curve.getPoints(3);
-	const lineGeo = new THREE.BufferGeometry().setFromPoints(points);
-	const line = new THREE.Line(lineGeo, lineMat);
-	originalLineGroup.add(line);
-	lineArray.push(line);
-}
-//get 3 random Vector2 within bounding box
-const atractorPoints: THREE.Vector2[] = [];
-for (let i = 0; i < 5; i++) {
-	const x = Math.random() * countX;
-	const y = Math.random() * countY;
-	atractorPoints.push(new THREE.Vector2(x, y));
-}
 
+const createHorizontalLines = (amount: number):THREE.Line[] => {
+	const lines : THREE.Line[] = [];
+	for (let i = 0; i < amount; i++) {
+		const curve = new THREE.LineCurve(
+			new THREE.Vector2(0, i),
+			new THREE.Vector2(amount, i)
+		);
+		const points = curve.getPoints(pointAmount);
+		const lineGeo = new THREE.BufferGeometry().setFromPoints(points);
+		const line = new THREE.Line(lineGeo, lineMat);
+		originalLineGroup.add(line);
+		lines.push(line);
+	}
+	return lines;
+}
+const createAtractorpoints = (amount: number) => {
+	
+	const atractorPoints: THREE.Vector2[] = [];
+	for (let i = 0; i < amount; i++) {
+		const x = Math.random() * countX;
+		const y = Math.random() * countY;
+		atractorPoints.push(new THREE.Vector2(x, y));
+	}
+	return atractorPoints;
+}
 const createPattern = () => {
+	let lineArray = createHorizontalLines(countY);
+	const atractorPoints = createAtractorpoints(pointAmount);
 	atractorPoints.forEach((atractorPoint: THREE.Vector2) => {
 		const newLineArray: THREE.Line[] = [];
 		lineArray.forEach((line: THREE.Object3D) => {
