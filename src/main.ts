@@ -20,7 +20,7 @@ newLineGroup.name = 'newLineGroup';
 scene.add(newLineGroup);
 let isProportional = true;
 
-let proportion = 0.01/4;
+let proportion = 0.01 / 4;
 let exponentialFalloff = 0.01;
 let linearFalloff = 4;
 
@@ -273,7 +273,127 @@ function customFalloff(distance: number, maxDistance: number, exponentialFactor:
 	// Combine both components
 	return exponentialPart * linearPart;
 }
+//add gui button for export function
+function getBoundsXY(lines: THREE.Line[]): { boundsX: number, boundsY: number, minx: number, miny: number, maxx: number, maxy: number } {
+	let maxx = 0;
+	let minx = 0;
+	let maxy = 0;
+	let miny = 0;
+	lines.forEach((line: THREE.Line) => {
+		const lineGeo = line.geometry as THREE.BufferGeometry;
+		const linePoints = lineGeo.attributes.position.array as Float64Array;
+		for (let i = 0; i < linePoints.length; i += 3) {
+			const x = linePoints[i];
+			const y = linePoints[i + 1];
+			if (x > maxx) {
+				maxx = x;
+			}
+			if (y > maxy) {
+				maxy = y;
+			}
+			if (x < minx) {
+				minx = x;
+			}
+			if (y < miny) {
+				miny = y;
+			}
+		}
+	})
+	const boundsX = Math.abs(maxx) + Math.abs(minx);
+	const boundsY = Math.abs(maxy) + Math.abs(miny);
+	return { boundsX, boundsY, minx, miny, maxx, maxy };
+}
+const exportLinesAsSVG = () => {
+	const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+	svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+	svg.setAttribute('viewBox', '0 0 1000 1000');
 
+	const multiplyer = 1;
+	//find highest and lowest x and y value
+
+	let { boundsX, boundsY } = getBoundsXY([..._horizontalLines, ..._verticalLines]);
+	const {minx, miny, maxx, maxy} = getBoundsXY([..._horizontalLines, ..._verticalLines]);
+	
+
+	// Calculate the width and height of your content
+	const contentWidth = maxx - minx;
+	const contentHeight = maxy - miny;
+
+	// Calculate the center point of your content
+	const centerX = (minx + maxx) / 2;
+	const centerY = (miny + maxy) / 2;
+	const margin = 100;
+	// Determine the desired size of the viewBox with some margin
+	const viewBoxWidth = contentWidth + margin;
+	const viewBoxHeight = contentHeight + margin;
+
+	// Calculate the top-left corner of the viewBox
+	const viewBoxMinX = centerX - viewBoxWidth / 2;
+	const viewBoxMinY = centerY - viewBoxHeight / 2;
+
+	// Set the viewBox attribute of your SVG element
+	svg.setAttribute('viewBox', `${viewBoxMinX} ${viewBoxMinY} ${viewBoxWidth} ${viewBoxHeight}`);
+	console.log(boundsX, boundsY);
+	svg.setAttribute('width', `${boundsX}`);
+	svg.setAttribute('height', `${boundsY}`);
+	_horizontalLines.forEach((line: THREE.Line) => {
+		if (!line.visible) {
+			return;
+		}
+		const lineGeo = line.geometry as THREE.BufferGeometry;
+		const linePoints = lineGeo.attributes.position.array as Float64Array;
+		const lineElement = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
+		let pointsString = '';
+		for (let i = 0; i < linePoints.length; i += 3) {
+			const x = linePoints[i];
+			const y = linePoints[i + 1];
+			pointsString += `${x * multiplyer},${y * multiplyer} `;
+		}
+		lineElement.setAttribute('points', pointsString);
+		lineElement.setAttribute('stroke', 'black');
+		lineElement.setAttribute('stroke-width', '1');
+		lineElement.setAttribute('fill', 'none');
+
+		svg.appendChild(lineElement);
+	})
+	_verticalLines.forEach((line: THREE.Line) => {
+		if (!line.visible) {
+			return;
+		}
+		const lineGeo = line.geometry as THREE.BufferGeometry;
+		const linePoints = lineGeo.attributes.position.array as Float64Array;
+		const lineElement = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
+		let pointsString = '';
+		for (let i = 0; i < linePoints.length; i += 3) {
+			const x = linePoints[i];
+			const y = linePoints[i + 1];
+			pointsString += `${x * multiplyer},${y * multiplyer} `;
+		}
+		lineElement.setAttribute('points', pointsString);
+		lineElement.setAttribute('stroke', 'black');
+		lineElement.setAttribute('stroke-width', '1');
+		lineElement.setAttribute('fill', 'none');
+		svg.appendChild(lineElement);
+	})
+	const svgData = new XMLSerializer().serializeToString(svg);
+	const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+	const svgUrl = URL.createObjectURL(svgBlob);
+	const downloadLink = document.createElement('a');
+	downloadLink.href = svgUrl;
+	downloadLink.download = 'pattern.svg';
+	document.body.appendChild(downloadLink);
+	downloadLink.click();
+	document.body.removeChild(downloadLink);
+
+}
+const refresh = () => {
+	_atractorPoints = [];
+	resetPattern();
+	initPattern();
+
+}
+gui.add({ refresh }, 'refresh');
+gui.add({ exportLinesAsSVG }, 'exportLinesAsSVG');
 function animate() {
 	requestAnimationFrame(animate);
 
