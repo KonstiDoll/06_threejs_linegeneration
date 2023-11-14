@@ -18,9 +18,9 @@ const lineMat = new THREE.LineBasicMaterial({
 const newLineGroup = new THREE.Group();
 newLineGroup.name = 'newLineGroup';
 scene.add(newLineGroup);
-let isProportional = false;
+let isProportional = true;
 
-let proportion = 4 / 0.01;
+let proportion = 0.01/4;
 let exponentialFalloff = 0.01;
 let linearFalloff = 4;
 
