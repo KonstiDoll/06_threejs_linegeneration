@@ -146,7 +146,6 @@ const initgridLines = () => {
         atractorPoints = createAttractorpoints(pointAmount);
         _atractorPoints = atractorPoints;
         atractorPointsJson = JSON.stringify(atractorPoints);
-        debugger
     }
     else {
         atractorPoints = _atractorPoints;
